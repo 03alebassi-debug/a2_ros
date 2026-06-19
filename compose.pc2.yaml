@@ -48,6 +48,7 @@ services:
   # network. Run only ONE router per host.
   zenoh_router_robot:
     <<: *common
+    image: a2_ros:base
     build:
       context: .
       dockerfile: ./environment/Dockerfile.dev
@@ -92,10 +93,13 @@ services:
         target: /home/ubuntu/.bash_history_dir
       - type: volume
         source: robot_colcon_build
-        target: /a2_ros/build
+        target: /a2_ros_ws/build
       - type: volume
         source: robot_colcon_install
-        target: /a2_ros/install
+        target: /a2_ros_ws/install
+      - type: volume
+        source: robot_colcon_log
+        target: /a2_ros_ws/log
       - type: volume
         source: robot_rosdep_cache
         target: /home/ubuntu/.ros
@@ -132,10 +136,13 @@ services:
         target: /home/ubuntu/.bash_history_dir
       - type: volume
         source: robot_colcon_build
-        target: /a2_ros/build
+        target: /a2_ros_ws/build
       - type: volume
         source: robot_colcon_install
-        target: /a2_ros/install
+        target: /a2_ros_ws/install
+      - type: volume
+        source: robot_colcon_log
+        target: /a2_ros_ws/log
       - type: volume
         source: robot_rosdep_cache
         target: /home/ubuntu/.ros
@@ -144,4 +151,5 @@ volumes:
   robot_bash_history:
   robot_colcon_build:
   robot_colcon_install:
+  robot_colcon_log:
   robot_rosdep_cache:
