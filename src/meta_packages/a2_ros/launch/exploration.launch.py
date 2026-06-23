@@ -38,7 +38,6 @@ from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node, SetParameter
 from launch_ros.parameter_descriptions import ParameterValue
 
-
 def _format_params(name, params):
     return f"\n[EXPLORE PARAMS] {name}\n{pformat(params, sort_dicts=True)}"
 
