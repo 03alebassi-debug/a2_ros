@@ -29,13 +29,26 @@ The robot will begin exploring autonomously.
 """
 
 import os
+from pprint import pformat
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
+from launch.actions import DeclareLaunchArgument, LogInfo
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node, SetParameter
 from launch_ros.parameter_descriptions import ParameterValue
+
+
+def _format_params(name, params):
+    return f"\n[EXPLORE PARAMS] {name}\n{pformat(params, sort_dicts=True)}"
+
+
+def _read_file(path):
+    try:
+        with open(path, 'r', encoding='utf-8') as file:
+            return file.read()
+    except OSError as exc:
+        return f"<failed to read {path}: {exc}>"
 
 
 def generate_launch_description():
@@ -57,10 +70,141 @@ def generate_launch_description():
         description='Seconds of autonomous exploration before the robot returns home'
     )
 
+    terrain_analysis_params = {
+        'scanVoxelSize':       0.05,
+        'decayTime':           5.0,
+        'noDecayDis':          0.0,
+        'clearingDis':         8.0,
+        'useSorting':          True,
+        'quantileZ':           0.25,
+        'considerDrop':        True,
+        'limitGroundLift':     True,
+        'maxGroundLift':       0.25,
+        'clearDyObs':          False,
+        'minDyObsDis':         0.3,
+        'minDyObsAngle':       0.0,
+        'minDyObsRelZ':        -0.5,
+        'absDyObsRelZThre':    0.2,
+        'minDyObsVFOV':        -16.0,
+        'maxDyObsVFOV':        16.0,
+        'minDyObsPointNum':    1,
+        'noDataObstacle':      False,
+        'noDataBlockSkipNum':  0,
+        'minBlockPointNum':    10,
+        'vehicleHeight':       0.5,
+        'voxelPointUpdateThre': 100,
+        'voxelTimeUpdateThre': 2.0,
+        'minRelZ':             -1.0,
+        'maxRelZ':             1.0,
+        'disRatioZ':           0.2,
+    }
+
+    terrain_analysis_ext_params = {
+        'scanVoxelSize':        0.1,
+        'decayTime':            10.0,
+        'noDecayDis':           0.0,
+        'clearingDis':          30.0,
+        'useSorting':           True,
+        'quantileZ':            0.25,
+        'vehicleHeight':        0.5,
+        'voxelPointUpdateThre': 100,
+        'voxelTimeUpdateThre':  2.0,
+        'lowerBoundZ':          -1.0,
+        'upperBoundZ':          1.0,
+        'disRatioZ':            0.1,
+        'checkTerrainConn':     True,
+        'terrainUnderVehicle':  -0.75,
+        'terrainConnThre':      0.5,
+        'ceilingFilteringThre': 2.0,
+        'localTerrainMapRadius': 4.0,
+    }
+
+    local_planner_params = {
+        'pathFolder':          get_package_share_directory('local_planner') + '/paths',
+        'vehicleLength':       0.65,
+        'vehicleWidth':        0.40,
+        'sensorOffsetX':       0.0,
+        'sensorOffsetY':       0.0,
+        'twoWayDrive':         False,
+        'laserVoxelSize':      0.05,
+        'terrainVoxelSize':    0.2,
+        'useTerrainAnalysis':  True,
+        'checkObstacle':       True,
+        'checkRotObstacle':    True,
+        'adjacentRange':       2.0,
+        'obstacleHeightThre':  0.2,
+        'groundHeightThre':    0.1,
+        'costHeightThre':      0.1,
+        'costScore':           0.02,
+        'useCost':             False,
+        'pointPerPathThre':    2,
+        'minRelZ':             -0.5,
+        'maxRelZ':             0.8,
+        'maxSpeed':            0.5,
+        'dirWeight':           0.1,
+        'dirThre':             90.0,
+        'dirToVehicle':        False,
+        'pathScale':           1.0,
+        'minPathScale':        0.75,
+        'pathScaleStep':       0.25,
+        'pathScaleBySpeed':    False,
+        'minPathRange':        1.0,
+        'pathRangeStep':       0.5,
+        'pathRangeBySpeed':    False,
+        'pathCropByGoal':      True,
+        'autonomyMode':        True,
+        'autonomySpeed':       1.0,
+        'joyToSpeedDelay':     2.0,
+        'joyToCheckObstacleDelay': 5.0,
+        'goalReachedDist':     0.35,
+        'goalClearRange':      0.3,
+        'goalX':               0.0,
+        'goalY':               0.0,
+    }
+
+    path_follower_params = {
+        'sensorOffsetX':    0.0,
+        'sensorOffsetY':    0.0,
+        'pubSkipNum':       1,
+        'twoWayDrive':      False,
+        'lookAheadDis':     0.4,
+        'yawRateGain':      5.0,
+        'stopYawRateGain':  4.0,
+        'maxYawRate':       30.0,
+        'maxSpeed':         0.5,
+        'maxAccel':         2.0,
+        'switchTimeThre':   1.0,
+        'dirDiffThre':      0.1,
+        'stopDisThre':      0.3,
+        'slowDwnDisThre':   0.6,
+        'useInclRateToSlow': False,
+        'inclRateThre':     120.0,
+        'slowRate1':        0.25,
+        'slowRate2':        0.5,
+        'slowTime1':        2.0,
+        'slowTime2':        2.0,
+        'useInclToStop':    False,
+        'inclThre':         45.0,
+        'stopTime':         5.0,
+        'noRotAtStop':      False,
+        'noRotAtGoal':      True,
+        'autonomyMode':     True,
+        'autonomySpeed':    2.0,
+        'joyToSpeedDelay':  2.0,
+    }
+
     nodes = [
         rviz_arg,
         exploration_duration_arg,
         SetParameter(name='use_sim_time', value=False),
+        LogInfo(msg=_format_params('terrainAnalysis', terrain_analysis_params)),
+        LogInfo(msg=_format_params('terrainAnalysisExt', terrain_analysis_ext_params)),
+        LogInfo(msg=_format_params('localPlanner', local_planner_params)),
+        LogInfo(msg=_format_params('pathFollower', path_follower_params)),
+        LogInfo(msg=f"\n[EXPLORE PARAMS] tare_planner YAML path\n{tare_config}"),
+        LogInfo(msg=f"\n[EXPLORE PARAMS] tare_planner YAML contents\n{_read_file(tare_config)}"),
+        LogInfo(msg=f"\n[EXPLORE PARAMS] far_planner YAML path\n{far_config}"),
+        LogInfo(msg=f"\n[EXPLORE PARAMS] far_planner YAML contents\n{_read_file(far_config)}"),
 
         # ---- terrain analysis (local map) ----
         Node(
@@ -68,34 +212,7 @@ def generate_launch_description():
             executable='terrainAnalysis',
             name='terrainAnalysis',
             output='screen',
-            parameters=[{
-                'scanVoxelSize':       0.05,
-                'decayTime':           10.0,
-                'noDecayDis':          0.0,
-                'clearingDis':         8.0,
-                'useSorting':          True,
-                'quantileZ':           0.25,
-                'considerDrop':        True,
-                'limitGroundLift':     True,
-                'maxGroundLift':       0.25,
-                'clearDyObs':          False,
-                'minDyObsDis':         0.3,
-                'minDyObsAngle':       0.0,
-                'minDyObsRelZ':        -0.5,
-                'absDyObsRelZThre':    0.2,
-                'minDyObsVFOV':        -16.0,
-                'maxDyObsVFOV':        16.0,
-                'minDyObsPointNum':    1,
-                'noDataObstacle':      False,
-                'noDataBlockSkipNum':  0,
-                'minBlockPointNum':    10,
-                'vehicleHeight':       0.5,
-                'voxelPointUpdateThre': 100,
-                'voxelTimeUpdateThre': 2.0,
-                'minRelZ':             -1.0,
-                'maxRelZ':             1.0,
-                'disRatioZ':           0.2,
-            }],
+            parameters=[terrain_analysis_params],
         ),
 
         # ---- terrain analysis ext (global map) ----
@@ -104,25 +221,7 @@ def generate_launch_description():
             executable='terrainAnalysisExt',
             name='terrainAnalysisExt',
             output='screen',
-            parameters=[{
-                'scanVoxelSize':        0.1,
-                'decayTime':            10.0,
-                'noDecayDis':           0.0,
-                'clearingDis':          30.0,
-                'useSorting':           True,
-                'quantileZ':            0.25,
-                'vehicleHeight':        0.5,
-                'voxelPointUpdateThre': 100,
-                'voxelTimeUpdateThre':  2.0,
-                'lowerBoundZ':          -1.0,
-                'upperBoundZ':          1.0,
-                'disRatioZ':            0.1,
-                'checkTerrainConn':     True,
-                'terrainUnderVehicle':  -0.75,
-                'terrainConnThre':      0.5,
-                'ceilingFilteringThre': 2.0,
-                'localTerrainMapRadius': 4.0,
-            }],
+            parameters=[terrain_analysis_ext_params],
         ),
         # ---- local planner ----
         Node(
@@ -131,47 +230,7 @@ def generate_launch_description():
             name='localPlanner',
             output='screen',
             remappings=[('/way_point', '/selected_waypoint')],
-            parameters=[{
-                'pathFolder':          get_package_share_directory('local_planner') + '/paths',
-                'vehicleLength':       0.65,
-                'vehicleWidth':        0.40,
-                'sensorOffsetX':       0.0,
-                'sensorOffsetY':       0.0,
-                'twoWayDrive':         False,
-                'laserVoxelSize':      0.05,
-                'terrainVoxelSize':    0.2,
-                'useTerrainAnalysis':  True,
-                'checkObstacle':       True,
-                'checkRotObstacle':    True,
-                'adjacentRange':       2.0,
-                'obstacleHeightThre':  0.15,
-                'groundHeightThre':    0.1,
-                'costHeightThre':      0.1,
-                'costScore':           0.02,
-                'useCost':             False,
-                'pointPerPathThre':    2,
-                'minRelZ':             -0.5,
-                'maxRelZ':             0.8,
-                'maxSpeed':            0.5,
-                'dirWeight':           0.1,
-                'dirThre':             90.0,
-                'dirToVehicle':        False,
-                'pathScale':           1.0,
-                'minPathScale':        0.75,
-                'pathScaleStep':       0.25,
-                'pathScaleBySpeed':    False,
-                'minPathRange':        1.0,
-                'pathRangeStep':       0.5,
-                'pathRangeBySpeed':    True,
-                'pathCropByGoal':      True,
-                'autonomyMode':        True,
-                'autonomySpeed':       1.0,
-                'joyToSpeedDelay':     2.0,
-                'joyToCheckObstacleDelay': 5.0,
-                'goalClearRange':      0.3,
-                'goalX':               0.0,
-                'goalY':               0.0,
-            }],
+            parameters=[local_planner_params],
         ),
 
         Node(
@@ -179,36 +238,7 @@ def generate_launch_description():
             executable='pathFollower',
             name='pathFollower',
             output='screen',
-            parameters=[{
-                'sensorOffsetX':    0.0,
-                'sensorOffsetY':    0.0,
-                'pubSkipNum':       1,
-                'twoWayDrive':      False,
-                'lookAheadDis':     0.4,
-                'yawRateGain':      5.0,
-                'stopYawRateGain':  4.0,
-                'maxYawRate':       30.0,
-                'maxSpeed':         0.5,
-                'maxAccel':         2.0,
-                'switchTimeThre':   1.0,
-                'dirDiffThre':      0.1,
-                'stopDisThre':      0.3,
-                'slowDwnDisThre':   0.6,
-                'useInclRateToSlow': False,
-                'inclRateThre':     120.0,
-                'slowRate1':        0.25,
-                'slowRate2':        0.5,
-                'slowTime1':        2.0,
-                'slowTime2':        2.0,
-                'useInclToStop':    False,
-                'inclThre':         45.0,
-                'stopTime':         5.0,
-                'noRotAtStop':      False,
-                'noRotAtGoal':      True,
-                'autonomyMode':     True,
-                'autonomySpeed':    1.0,
-                'joyToSpeedDelay':  2.0,
-            }],
+            parameters=[path_follower_params],
         ),
 
         # ---- TARE planner (autonomous exploration) ----

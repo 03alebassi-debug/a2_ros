@@ -20,25 +20,25 @@ tare_planner_node:
     kRushHome : true                # return to start when near home after exploration finishes
     kUseTerrainHeight : true        # use terrain map height for terrain-aware planning
     kCheckTerrainCollision : true   # reject terrain points above kTerrainCollisionThreshold as obstacles
-    kExtendWayPoint : true          # extend lookahead waypoint further if it is within extend distance
+    kExtendWayPoint : false          # extend lookahead waypoint further if it is within extend distance
     kUseLineOfSightLookAheadPoint : true  # require line-of-sight to lookahead point; pick alternative if blocked
     kNoExplorationReturnHome : true       # return to start when exploration is complete
-    kExtendWayPointDistanceBig : 4.0     # extension distance when waypoint has line-of-sight (m)
-    kExtendWayPointDistanceSmall : 2.5   # extension distance when waypoint does not have line-of-sight (m)
+    kExtendWayPointDistanceBig : 2.0     # extension distance when waypoint has line-of-sight (m)
+    kExtendWayPointDistanceSmall : 1.5   # extension distance when waypoint does not have line-of-sight (m)
     kKeyposeCloudDwzFilterLeafSize : 0.2 # voxel leaf size for downsampling keypose / registered scan clouds (m)
     kRushHomeDist : 10.0            # distance to home below which rush-home activates (m)
     kAtHomeDistThreshold : 0.5      # distance to consider robot arrived at home (m)
     kTerrainCollisionThreshold : 0.3     # terrain point intensity above this is treated as a collision obstacle
-    kLookAheadDistance : 5.0        # distance ahead on path to project lookahead waypoint (m)
+    kLookAheadDistance : 1.5        # distance ahead on path to project lookahead waypoint (m)
     kUseMomentum : true            # bias waypoint selection toward previous travel direction
-    kDirectionChangeCounterThr : 6       # consecutive direction changes before momentum switch triggers
+    kDirectionChangeCounterThr : 3       # consecutive direction changes before momentum switch triggers
     kDirectionNoChangeCounterThr : 5     # steps without direction change before stuck detection triggers
     kResetWaypointJoystickAxesID : 2     # joystick axis index that manually resets the waypoint
 
     # PlanningEnv
     kUseFrontier : true                       # enable frontier-based exploration
     kFrontierClusterTolerance : 1.0           # max distance to merge frontier points into one cluster (m)
-    kFrontierClusterMinSize : 5              # min points in a frontier cluster to keep it
+    kFrontierClusterMinSize : 5               # min points in a frontier cluster to keep it
     kUseCoverageBoundaryOnFrontier : false    # clip frontiers to coverage boundary polygon
     kUseCoverageBoundaryOnObjectSurface : false  # clip keypose cloud to coverage boundary polygon
 
@@ -60,9 +60,9 @@ tare_planner_node:
     kCoverCloudZSqueezeRatio : 2.0      # Z-axis squeeze factor when building coverage cloud
 
     # KeyposeGraph — topological map of where the robot has been
-    keypose_graph/kAddNodeMinDist : 0.5              # min travel distance to add a new keypose node (m)
-    keypose_graph/kAddNonKeyposeNodeMinDist : 0.3    # min distance between intermediate graph nodes (m)
-    keypose_graph/kAddEdgeConnectDistThr : 2.0       # max distance to connect two nearby nodes with an edge (m)
+    keypose_graph/kAddNodeMinDist : 0.3            # min travel distance to add a new keypose node (m)
+    keypose_graph/kAddNonKeyposeNodeMinDist : 0.2    # min distance between intermediate graph nodes (m)
+    keypose_graph/kAddEdgeConnectDistThr : 2.5       # max distance to connect two nearby nodes with an edge (m)
     keypose_graph/kAddEdgeToLastKeyposeDistThr : 2.0 # max distance to connect node to last keypose (m)
     keypose_graph/kAddEdgeVerticalThreshold : 0.5    # max vertical gap for a valid graph edge (m)
     keypose_graph/kAddEdgeCollisionCheckResolution : 0.3  # step size for edge collision checks (m)
@@ -94,7 +94,7 @@ tare_planner_node:
     kCollisionFrameCountMax : 3             # history frames used for dynamic obstacle collision check
 
     kSensorRange : 10.0          # max range used for coverage calculations — matches lidar cutoff (m)
-    kNeighborRange : 2.5         # search radius for viewpoint connectivity (m)
+    kNeighborRange : 3.0         # search radius for viewpoint connectivity (m)
     kCoverageOcclusionThr : 0.3  # distance threshold for occlusion in coverage calculation (m)
     kCoverageDilationRadius : 0.8  # dilation radius applied to covered area (m)
 
