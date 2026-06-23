@@ -74,6 +74,7 @@ add_executable(mission_manager
 target_compile_features(mission_manager PRIVATE cxx_std_20)
 ament_target_dependencies(mission_manager
   rclcpp
+  std_msgs
   geometry_msgs
   nav_msgs
 )

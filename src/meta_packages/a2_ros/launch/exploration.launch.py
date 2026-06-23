@@ -193,6 +193,23 @@ def generate_launch_description():
         'joyToSpeedDelay':  2.0,
     }
 
+    mission_manager_params = {
+        'exploration_duration': ParameterValue(
+            LaunchConfiguration('exploration_duration'), value_type=float),
+        'watchdog_enabled': True,
+        'watchdog_stuck_timeout': 5.0,
+        'watchdog_min_progress': 0.15,
+        'watchdog_min_waypoint_distance': 0.8,
+        'watchdog_goal_reached_dist': 0.5,
+        'watchdog_stopped_linear_threshold': 0.03,
+        'watchdog_stopped_angular_threshold': 0.03,
+        'watchdog_blacklist_radius': 1.0,
+        'watchdog_blacklist_ttl': 15.0,
+        'watchdog_reset_cooldown': 3.0,
+        'watchdog_escape_distance': 1.5,
+        'watchdog_escape_hold_time': 10.0,
+    }
+
     nodes = [
         rviz_arg,
         exploration_duration_arg,
@@ -201,6 +218,7 @@ def generate_launch_description():
         LogInfo(msg=_format_params('terrainAnalysisExt', terrain_analysis_ext_params)),
         LogInfo(msg=_format_params('localPlanner', local_planner_params)),
         LogInfo(msg=_format_params('pathFollower', path_follower_params)),
+        LogInfo(msg=_format_params('mission_manager', mission_manager_params)),
         LogInfo(msg=f"\n[EXPLORE PARAMS] tare_planner YAML path\n{tare_config}"),
         LogInfo(msg=f"\n[EXPLORE PARAMS] tare_planner YAML contents\n{_read_file(tare_config)}"),
         LogInfo(msg=f"\n[EXPLORE PARAMS] far_planner YAML path\n{far_config}"),
@@ -246,7 +264,7 @@ def generate_launch_description():
             package='tare_planner',
             executable='tare_planner_node',
             name='tare_planner_node',
-            output='screen',
+            output='log',
             parameters=[tare_config],
         ),
 
@@ -281,10 +299,7 @@ def generate_launch_description():
             executable='mission_manager',
             name='mission_manager',
             output='screen',
-            parameters=[{
-                'exploration_duration': ParameterValue(
-                    LaunchConfiguration('exploration_duration'), value_type=float),
-            }],
+            parameters=[mission_manager_params],
         ),
 
         # ---- RViz ----

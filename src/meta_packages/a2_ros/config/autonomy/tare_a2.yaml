@@ -79,7 +79,7 @@ tare_planner_node:
     kConnectivityHeightDiffThr : 0.25     # max height difference for two viewpoints to be connected (m)
     kGreedyViewPointSampleRange : 3       # candidates sampled per greedy selection step
     kLocalPathOptimizationItrMax : 10     # TSP optimization iterations for local path ordering
-    kViewPointCollisionMargin : 0.3       # XY safety margin around each viewpoint for collision (m) — ~A2 half-width
+    kViewPointCollisionMargin : 0.4       # XY safety margin around each viewpoint for collision (m) — ~A2 half-width
     kViewPointCollisionMarginZPlus : 0.4  # upward Z margin for viewpoint collision check (m)
     kViewPointCollisionMarginZMinus : 0.3 # downward Z margin for viewpoint collision check (m)
     kCollisionGridZScale : 1.0            # Z scale factor applied to collision grid
