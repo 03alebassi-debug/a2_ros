@@ -154,7 +154,7 @@ def generate_launch_description():
                 'pathRangeBySpeed':    True,
                 'pathCropByGoal':      True,
                 'autonomyMode':        True,
-                'autonomySpeed':       1.0,
+                'autonomySpeed':       0.5,
                 'joyToSpeedDelay':     2.0,
                 'joyToCheckObstacleDelay': 5.0,
                 'goalClearRange':      0.3,

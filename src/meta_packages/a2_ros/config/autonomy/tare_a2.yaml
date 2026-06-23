@@ -24,7 +24,7 @@ tare_planner_node:
     kUseLineOfSightLookAheadPoint : true  # require line-of-sight to lookahead point; pick alternative if blocked
     kNoExplorationReturnHome : true       # return to start when exploration is complete
     kExtendWayPointDistanceBig : 4.0     # extension distance when waypoint has line-of-sight (m)
-    kExtendWayPointDistanceSmall : 2.5   # extension distance when waypoint does not have line-of-sight (m)
+    kExtendWayPointDistanceSmall : 1.3   # extension distance when waypoint does not have line-of-sight (m)
     kKeyposeCloudDwzFilterLeafSize : 0.2 # voxel leaf size for downsampling keypose / registered scan clouds (m)
     kRushHomeDist : 10.0            # distance to home below which rush-home activates (m)
     kAtHomeDistThreshold : 0.5      # distance to consider robot arrived at home (m)

@@ -128,7 +128,7 @@ def generate_launch_description():
         'checkObstacle':       True,
         'checkRotObstacle':    True,
         'adjacentRange':       2.0,
-        'obstacleHeightThre':  0.15,
+        'obstacleHeightThre':  0.25,
         'groundHeightThre':    0.1,
         'costHeightThre':      0.1,
         'costScore':           0.02,

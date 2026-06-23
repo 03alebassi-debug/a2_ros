@@ -1,7 +1,7 @@
 # Run 
-#   a2 record --config config/record/raw.yaml ./<bag_folder>/<bag_name>
+#   a2 bag record --config config/record/raw.yaml ./<bag_folder>/<bag_name>
 # The same as
-#   ros2 bag record -s mcap -o ./<bag_folder>/<bag_name> /front_lidar/points /front_lidar/imu /front_lidar/ptp /joint_states /tf /tf_static /lowstate /imu/data /camera/image/compressed /camera/camera_info
+#   ros2 bag record -s mcap -o ./<bag_folder>/<bag_name> /front_lidar/points /front_lidar/imu /front_lidar/ptp /joint_states /tf /tf_static /lowstate /imu/data /camera/image_raw/compressed /camera/camera_info
 topics:
   # Lidar
   - /front_lidar/points
