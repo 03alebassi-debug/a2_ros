@@ -35,12 +35,15 @@ from launch.actions import DeclareLaunchArgument
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node, SetParameter
+from launch_ros.parameter_descriptions import ParameterValue
+
 
 def generate_launch_description():
     description_dir = get_package_share_directory('a2_description')
     a2_ros_dir      = get_package_share_directory('a2_ros')
     rviz_path        = os.path.join(a2_ros_dir, 'rviz', 'exploration.rviz')
     tare_config      = os.path.join(a2_ros_dir, 'config', 'autonomy', 'tare_a2.yaml')
+    far_config       = os.path.join(a2_ros_dir, 'config', 'autonomy', 'far_a2.yaml')
 
     rviz_arg = DeclareLaunchArgument(
         'rviz',
@@ -48,8 +51,15 @@ def generate_launch_description():
         description='Launch RViz2'
     )
 
+    exploration_duration_arg = DeclareLaunchArgument(
+        'exploration_duration',
+        default_value='60.0',
+        description='Seconds of autonomous exploration before the robot returns home'
+    )
+
     nodes = [
         rviz_arg,
+        exploration_duration_arg,
         SetParameter(name='use_sim_time', value=False),
 
         # ---- terrain analysis (local map) ----
@@ -120,6 +130,7 @@ def generate_launch_description():
             executable='localPlanner',
             name='localPlanner',
             output='screen',
+            remappings=[('/way_point', '/selected_waypoint')],
             parameters=[{
                 'pathFolder':          get_package_share_directory('local_planner') + '/paths',
                 'vehicleLength':       0.65,
@@ -132,7 +143,7 @@ def generate_launch_description():
                 'useTerrainAnalysis':  True,
                 'checkObstacle':       True,
                 'checkRotObstacle':    True,
-                'adjacentRange':       2.0,
+                'adjacentRange':       3.5,
                 'obstacleHeightThre':  0.25,
                 'groundHeightThre':    0.1,
                 'costHeightThre':      0.1,
@@ -148,16 +159,16 @@ def generate_launch_description():
                 'pathScale':           1.0,
                 'minPathScale':        0.75,
                 'pathScaleStep':       0.25,
-                'pathScaleBySpeed':    False,
+                'pathScaleBySpeed':    True,
                 'minPathRange':        1.0,
                 'pathRangeStep':       0.5,
                 'pathRangeBySpeed':    True,
                 'pathCropByGoal':      True,
                 'autonomyMode':        True,
-                'autonomySpeed':       1.0,
+                'autonomySpeed':       2.0,
                 'joyToSpeedDelay':     2.0,
                 'joyToCheckObstacleDelay': 5.0,
-                'goalClearRange':      0.3,
+                'goalClearRange':      0.4,
                 'goalX':               0.0,
                 'goalY':               0.0,
             }],
@@ -174,9 +185,9 @@ def generate_launch_description():
                 'pubSkipNum':       1,
                 'twoWayDrive':      False,
                 'lookAheadDis':     0.4,
-                'yawRateGain':      5.0,
-                'stopYawRateGain':  4.0,
-                'maxYawRate':       30.0,
+                'yawRateGain':      10.0,
+                'stopYawRateGain':  8.0,
+                'maxYawRate':       45.0,
                 'maxSpeed':         0.5,
                 'maxAccel':         2.0,
                 'switchTimeThre':   1.0,
@@ -195,7 +206,7 @@ def generate_launch_description():
                 'noRotAtStop':      False,
                 'noRotAtGoal':      True,
                 'autonomyMode':     True,
-                'autonomySpeed':    1.0,
+                'autonomySpeed':    2.0,
                 'joyToSpeedDelay':  2.0,
             }],
         ),
@@ -207,6 +218,43 @@ def generate_launch_description():
             name='tare_planner_node',
             output='screen',
             parameters=[tare_config],
+        ),
+
+        # ---- FAR planner (global path planner used during return home) ----
+        # Runs in the background during exploration (builds terrain map).
+        # /way_point and /navigation_boundary outputs are remapped so they do
+        # not interfere with TARE during exploration; mission_manager forwards
+        # them to the real topics only when the return phase begins.
+        Node(
+            package='far_planner',
+            executable='far_planner',
+            name='far_planner',
+            output='screen',
+            additional_env={'QT_QPA_PLATFORM': 'offscreen'},
+            parameters=[far_config],
+            remappings=[
+                ('/odom_world',          '/state_estimation'),
+                ('/terrain_cloud',       '/terrain_map_ext'),
+                ('/scan_cloud',          '/registered_scan'),
+                ('/terrain_local_cloud', '/terrain_map'),
+                ('/way_point',           '/far_waypoint'),
+                ('/navigation_boundary', '/far_navigation_boundary'),
+            ],
+        ),
+
+        # ---- Mission manager (exploration → return-home switch) ----
+        # Forwards /way_point (TARE) → /selected_waypoint during exploration.
+        # After exploration_duration seconds, sends home goal to FAR and
+        # forwards /far_waypoint → /selected_waypoint for return navigation.
+        Node(
+            package='a2_ros',
+            executable='mission_manager',
+            name='mission_manager',
+            output='screen',
+            parameters=[{
+                'exploration_duration': ParameterValue(
+                    LaunchConfiguration('exploration_duration'), value_type=float),
+            }],
         ),
 
         # ---- RViz ----
