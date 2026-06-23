@@ -68,11 +68,22 @@ ament_target_dependencies(scan_pose_sync
   geometry_msgs
 )
 
+add_executable(mission_manager
+  src/mission_manager.cpp
+)
+target_compile_features(mission_manager PRIVATE cxx_std_20)
+ament_target_dependencies(mission_manager
+  rclcpp
+  geometry_msgs
+  nav_msgs
+)
+
 install(TARGETS
   stand_example
   teleop_joy
   nav_vel_relay
   scan_pose_sync
+  mission_manager
   DESTINATION lib/${PROJECT_NAME}
 )
 

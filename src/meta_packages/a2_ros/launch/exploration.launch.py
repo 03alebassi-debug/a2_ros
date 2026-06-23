@@ -35,6 +35,7 @@ from launch.actions import DeclareLaunchArgument
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node, SetParameter
+from launch_ros.parameter_descriptions import ParameterValue
 
 
 def generate_launch_description():
@@ -42,6 +43,7 @@ def generate_launch_description():
     a2_ros_dir      = get_package_share_directory('a2_ros')
     rviz_path        = os.path.join(a2_ros_dir, 'rviz', 'exploration.rviz')
     tare_config      = os.path.join(a2_ros_dir, 'config', 'autonomy', 'tare_a2.yaml')
+    far_config       = os.path.join(a2_ros_dir, 'config', 'autonomy', 'far_a2.yaml')
 
     rviz_arg = DeclareLaunchArgument(
         'rviz',
@@ -49,8 +51,15 @@ def generate_launch_description():
         description='Launch RViz2'
     )
 
+    exploration_duration_arg = DeclareLaunchArgument(
+        'exploration_duration',
+        default_value='60.0',
+        description='Seconds of autonomous exploration before the robot returns home'
+    )
+
     nodes = [
         rviz_arg,
+        exploration_duration_arg,
         SetParameter(name='use_sim_time', value=False),
 
         # ---- terrain analysis (local map) ----
@@ -121,6 +130,7 @@ def generate_launch_description():
             executable='localPlanner',
             name='localPlanner',
             output='screen',
+            remappings=[('/way_point', '/selected_waypoint')],
             parameters=[{
                 'pathFolder':          get_package_share_directory('local_planner') + '/paths',
                 'vehicleLength':       0.65,
@@ -210,6 +220,42 @@ def generate_launch_description():
             parameters=[tare_config],
         ),
 
+        # ---- FAR planner (global path planner used during return home) ----
+        # Runs in the background during exploration (builds terrain map).
+        # /way_point and /navigation_boundary outputs are remapped so they do
+        # not interfere with TARE during exploration; mission_manager forwards
+        # them to the real topics only when the return phase begins.
+        Node(
+            package='far_planner',
+            executable='far_planner',
+            name='far_planner',
+            output='screen',
+            additional_env={'QT_QPA_PLATFORM': 'offscreen'},
+            parameters=[far_config],
+            remappings=[
+                ('/odom_world',          '/state_estimation'),
+                ('/terrain_cloud',       '/terrain_map_ext'),
+                ('/scan_cloud',          '/registered_scan'),
+                ('/terrain_local_cloud', '/terrain_map'),
+                ('/way_point',           '/far_waypoint'),
+                ('/navigation_boundary', '/far_navigation_boundary'),
+            ],
+        ),
+
+        # ---- Mission manager (exploration → return-home switch) ----
+        # Forwards /way_point (TARE) → /selected_waypoint during exploration.
+        # After exploration_duration seconds, sends home goal to FAR and
+        # forwards /far_waypoint → /selected_waypoint for return navigation.
+        Node(
+            package='a2_ros',
+            executable='mission_manager',
+            name='mission_manager',
+            output='screen',
+            parameters=[{
+                'exploration_duration': ParameterValue(
+                    LaunchConfiguration('exploration_duration'), value_type=float),
+            }],
+        ),
 
         # ---- RViz ----
         Node(
