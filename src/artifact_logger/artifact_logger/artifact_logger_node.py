@@ -111,6 +111,12 @@ class ArtifactLogger(Node):
             if det.confidence < self.min_conf:
                 continue
 
+            # skip detections the 3D localizer could not place (too few lidar
+            # points in the bbox -> it returns a (0,0,-1) placeholder with
+            # pose_estimation_type "none"). Logging those would write garbage coords.
+            if getattr(det, 'pose_estimation_type', '') == 'none':
+                continue
+
             # reject far detections — bbox->lidar depth is unreliable at distance
             rng = math.sqrt(det.position.x**2 + det.position.y**2 + det.position.z**2)
             if rng > self.max_range:
