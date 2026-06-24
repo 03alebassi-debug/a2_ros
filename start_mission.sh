@@ -55,14 +55,14 @@ tmux send-keys -t "$SESSION:prep" "sleep 3 && a2 stand && a2 unlock && a2 walk" 
 tmux new-window -t "$SESSION" -n "dlio"
 tmux send-keys -t "$SESSION:dlio" "sleep 6 && a2 dlio --rviz" Enter
 
-#tmux new-window -t "$SESSION" -n "detect"
-#tmux send-keys -t "$SESSION:detect" "sleep 6 && a2 detect" Enter
+tmux new-window -t "$SESSION" -n "detect"
+tmux send-keys -t "$SESSION:detect" "sleep 6 && a2 detect" Enter
 
 tmux new-window -t "$SESSION" -n "mission"
 if [[ "$MISSION" == "exploration" ]]; then
     tmux send-keys -t "$SESSION:mission" "sleep 8 && ros2 launch a2_ros exploration.launch.py exploration_duration:=$EXP_TIME" Enter
 else
-    tmux send-keys -t "$SESSION:mission" "sleep 8 && a2 $MISSION" Enter
+    tmux send-keys -t "$SESSION:mission" "sleep 8 && a2 $MISSION --rviz" Enter
 fi
 
 tmux select-window -t "$SESSION:mission"
