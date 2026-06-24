@@ -246,6 +246,13 @@ def generate_launch_description():
             executable='localPlanner',
             name='localPlanner',
             output='screen',
+            # localPlanner's goal input (/way_point) is remapped to /selected_waypoint
+            # so mission_manager controls it: during exploration it forwards TARE's
+            # /way_point -> /selected_waypoint; during return it forwards FAR's
+            # /far_waypoint -> /selected_waypoint. Without this remap localPlanner stays
+            # glued to TARE's /way_point, which TARE parks on the robot's own pose after
+            # exploration finishes -> goal == current pose -> robot freezes on return.
+            remappings=[('/way_point', '/selected_waypoint')],
             parameters=[{
                 'pathFolder':          get_package_share_directory('local_planner') + '/paths',
                 'vehicleLength':       0.65,
